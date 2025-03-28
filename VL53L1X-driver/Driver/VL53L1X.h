@@ -1,18 +1,9 @@
 /**
  * \file        VL53L1X.h
  * \brief       VL53L1X driver library
- * \details
- * 
- *          About the OUT pin in the AS5600 sensor:
- * The ADC of the ESP32 is connected to the OUT pin of the AS5600 sensor.
- * The OUT pin can be configured to output a 10%-90% (VCC) analog signal.
- * Since the ESP32 ADC can only read 0-3.3V, the VCC of the AS5600 sensor must be 3.3V.
- * But there is another problem. The characteristic graft of the ADC (Voltage vs. Digital Value) is not linear on all
- * the range (0-3.3V). It is linear only on the 5%-90% range, aproximately.
- * That is why the OUT pin must be configured to output a 10%-90% signal.
  * 
  * \author      Jose Rivera
- * \version     0.0.1
+ * \version     0.0.3
  * \date        20/10/2024
  * \copyright   Unlicensed
  */
