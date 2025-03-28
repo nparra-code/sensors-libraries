@@ -35,7 +35,7 @@
 
 static const char* TAG_VL53L1X = "VL53L1X";
 
-static uint8_t TargetRate[] = {0x0A,0x00};
+static uint8_t TARGET_RATE[] = {0x0A,0x00};
 static uint8_t GPIO__TIO_HV_STATUS_VALUE[] = {0x02};
 static uint8_t SIGMA_ESTIMATOR__EFFECTIVE_PULSE_WIDTH_NS_VALUE[] = {8};
 static uint8_t SIGMA_ESTIMATOR__EFFECTIVE_AMBIENT_WIDTH_NS_VALUE[] = {16};
@@ -62,10 +62,18 @@ static uint8_t SYSTEM__SEQUENCE_CONFIG_VALUE[] = {0x8B};
 static uint8_t DSS_CONFIG__MANUAL_EFFECTIVE_SPADS_SELECT_VALUE[] = {0xC8,0x00};
 static uint8_t DSS_CONFIG__ROI_MODE_CONTROL_VALUE[] = {2};
 
-static const uint32_t TimingGuard = 4528;
+static const uint32_t TIMING_GUARD = 4528;
 
-
+/**
+ * @brief Distance modes structure
+ * 
+ */
 typedef enum { Short, Medium, Long, Unknown }distanceMode_t;
+
+/**
+ * @brief Range status structure to know different kinds states 
+ * 
+ */
 typedef enum{
       RangeValid                =   0,
 
@@ -121,16 +129,24 @@ typedef enum{
 
       // "No Update."
       None                      = 255,
-    }RangeStatus_t;
+    }rangeStatus_t;
 
+/**
+ * @brief Ranging Data structure, store relevant information about ranging measurement
+ * 
+ */
 typedef struct
 {
   uint16_t range_mm;
-  RangeStatus_t range_status;
+  rangeStatus_t range_status;
   float peak_signal_count_rate_MCPS;
   float ambient_count_rate_MCPS;
-}RangingData_t;
+}rangingData_t;
 
+/**
+ * @brief Result Buffer structure, store the ranging registers information
+ * 
+ */
 typedef struct
 {
     uint8_t range_status;
@@ -145,15 +161,19 @@ typedef struct
     uint16_t peak_signal_count_rate_crosstalk_corrected_mcps_sd0;
 }resultBuffer_t;
 
+/**
+ * @brief VL53L1X sensor structure
+ * 
+ */
 typedef struct
 {
     // Peripheral handles
-    distanceMode_t distanceMode;
+    distanceMode_t distance_mode;
     uint16_t fast_osc_frq;
     uint16_t osc_calibrate_val;
 
     resultBuffer_t results;
-    RangingData_t rangingData;
+    rangingData_t ranging_data;
 
     i2c_t i2c_handle;
 } vl53l1x_t;
@@ -165,32 +185,181 @@ static bool calibrated = false;
 static uint8_t saved_vhv_init;
 static uint8_t saved_vhv_timeout;
 
-bool vl53l1x_init(vl53l1x_t *vl53l1x, i2c_port_t i2c_num, uint8_t scl, uint8_t sda, bool io_2v8);
-bool vl53l1x_deinit(vl53l1x_t* sensor);
-bool setDistanceMode(vl53l1x_t* vl53l1x,distanceMode_t distanceMode);
-uint32_t getMeasurementTimingBudget(vl53l1x_t* vl53l1x);
-bool setMeasurementTimingBudget(vl53l1x_t* vl53l1x, uint32_t budget_us);
-uint32_t calcMacroPeriod(vl53l1x_t* vl53l1x, uint8_t vcsel_period);
-uint32_t decodeTimeout(uint16_t reg_val);
-uint32_t timeoutMclksToMicroseconds(uint32_t timeout_mclks, uint32_t macro_period_us);
-uint32_t timeoutMicrosecondsToMclks(uint32_t timeout_us, uint32_t macro_period_us);
-void encodeTimeout(uint32_t timeout_mclks, uint8_t* buff);
-uint16_t read_distance(vl53l1x_t* vl53l1x, bool blocking);
-void readResults(vl53l1x_t* vl53l1x);
+/**
+ * @brief Initialize the VL53L1x driver
+ * 
+ * @param vl53l1x pointer to sensor structure
+ * @param i2c_num 
+ * @param gpio_scl 
+ * @param gpio_sda 
+ * @param io_2v8 1 to 2.8 volts operation mode, sensor uses 1V8 mode for I/O by default
+ * 
+ * @return true if the sensor is initialized correctly
+ * @return false if the sensor initialization failed
+ */
+bool VL53L1X_init(vl53l1x_t *vl53l1x, i2c_port_t i2c_num, uint8_t scl, uint8_t sda, bool io_2v8);
 
-void setupManualCalibration(vl53l1x_t *vl53l1x);
-void updateDSS(vl53l1x_t *vl53l1x);
-void getRangingData(vl53l1x_t *vl53l1x);
+/**
+ * @brief Deinitialize the VL53L1x driver
+ * 
+* @param vl53l1x pointer to sensor structure
+* @return true if the sensor is deinitialized correctly
+* @return false if the sensor deinitialization failed
+ */
+bool VL53L1X_deinit(vl53l1x_t* sensor);
 
-void startTimeout();
-bool dataReady(vl53l1x_t *vl53l1x);
-bool checkTimeoutExpired();
-float countRateFixedToFloat(uint16_t count_rate_fixed);
+/**
+ * @brief Deinitialize the VL53L1x driver
+ * 
+* @param vl53l1x pointer to sensor structure
+* @param distance_mode Short(0) - Medium(1) - Long(2) - Unknown(3) 
+* @return true if the sensor distance mode setting correctly
+* @return false if the sensor distance mode setting failed
+ */
+bool VL53L1X_setDistanceMode(vl53l1x_t* vl53l1x,distanceMode_t distance_mode);
 
+/**
+ * @brief Get the measurement timing budget in microseconds
+ * 
+* @param vl53l1x pointer to sensor structure
+ */
+uint32_t VL53L1X_getMeasurementTimingBudget(vl53l1x_t* vl53l1x);
 
-uint16_t mergeData(uint8_t *data);
-void deMergeData(uint8_t *buff, uint32_t value, uint8_t len);
+/**
+ * @brief Set the measurement timing budget in microseconds
+ * 
+* @param vl53l1x pointer to sensor structure
+ */
+bool VL53L1X_setMeasurementTimingBudget(vl53l1x_t* vl53l1x, uint32_t budget_us);
 
-void startContinuous(vl53l1x_t* vl53l1x, uint32_t period_ms);
+/**
+ * @brief Calculate macro period in microseconds (12.12 format) with given VCSEL period
+ * 
+ * @param vl53l1x pointer to sensor structure
+ * @param vcsel_period 
+ */
+uint32_t VL53L1X_calcMacroPeriod(vl53l1x_t* vl53l1x, uint8_t vcsel_period);
+
+/**
+ * @brief Decode sequence step timeout in MCLKs from register value
+ * 
+ * @param reg_val
+ */
+uint32_t VL53L1X_decodeTimeout(uint16_t reg_val);
+
+/**
+ * @brief Convert sequence step timeout from macro periods to microseconds with given
+ * 
+ * @param timeout_mclks
+ * @param macro_period_us
+ */
+uint32_t VL53L1X_timeoutMclksToMicroseconds(uint32_t timeout_mclks, uint32_t macro_period_us);
+
+/**
+ * @brief Convert sequence step timeout from microseconds to macro periods with given
+ * 
+ * @param timeout_us
+ * @param macro_period_us
+ */
+uint32_t VL53L1X_timeoutMicrosecondsToMclks(uint32_t timeout_us, uint32_t macro_period_us);
+
+/**
+ * @brief Encode sequence step timeout register value from timeout in MCLKs
+ * 
+ * @param timeout_mclks
+ * @param buff buffer to store operation result {MSB, LSB}
+ */
+void VL53L1X_encodeTimeout(uint32_t timeout_mclks, uint8_t* buff);
+
+/**
+ * @brief Start continuous ranging measurements, with the given inter-measurement
+ * 
+ * @param vl53l1x
+ * @param period_ms period in milliseconds determining how often the sensor takes a measurement.
+ */
+void VL53L1X_startContinuous(vl53l1x_t* vl53l1x, uint32_t period_ms);
+/**
+ * @brief Returns a range reading in millimeters when continuous mode is active. If
+ *  blocking is true (the default), this function waits for a new measurement to
+ *  be available. If blocking is false, it will try to return data immediately.
+ *  (readSingle() also calls this function after starting a single-shot range
+ *  measurement)
+ * 
+ * @param vl53l1x pointer to sensor structure
+ * @param bloking
+ */
+uint16_t VL53L1X_readDistance(vl53l1x_t* vl53l1x, bool blocking);
+
+/**
+ * @brief read measurement results into buffer
+ * 
+ * @param vl53l1x pointer to sensor structure
+ */
+void VL53L1X_readResults(vl53l1x_t* vl53l1x);
+
+/**
+ * @brief Setup ranges after the first one in low power auto mode by turning off
+ * FW calibration steps and programming static values
+ * based on VL53L1_low_power_auto_setup_manual_calibration()
+ * 
+ * @param vl53l1x pointer to sensor structure
+ */
+void VL53L1X_setupManualCalibration(vl53l1x_t *vl53l1x);
+
+/**
+ * @brief perform Dynamic SPAD Selection calculation/update
+ * 
+ * @param vl53l1x pointer to sensor structure
+ */
+void VL53L1X_updateDSS(vl53l1x_t *vl53l1x);
+
+/**
+ * @brief get range, status, rates from results buffer
+ * 
+ * @param vl53l1x pointer to sensor structure
+ */
+void VL53L1X_getRangingData(vl53l1x_t *vl53l1x);
+
+/**
+ * @brief Returns a range reading in millimeters when continuous mode is active. If
+ * blocking is true (the default), this function waits for a new measurement to
+ * be available. If blocking is false, it will try to return data immediately.
+ */
+void VL53L1X_startTimeout();
+
+/**
+ * @brief check if sensor has new reading available
+ * assumes interrupt is active low (GPIO_HV_MUX__CTRL bit 4 is 1)
+ */
+bool VL53L1X_dataReady(vl53l1x_t *vl53l1x);
+
+/**
+ * @brief Check if timeout is enabled (set to nonzero value) and has expired
+ */
+bool VL53L1X_checkTimeoutExpired();
+
+/**
+ * @brief Convert count rate from fixed point 9.7 format to float
+ * 
+ * @param count_rate_fixed
+ */
+float VL53L1X_countRateFixedToFloat(uint16_t count_rate_fixed);
+
+/**
+ * @brief transform a uint8 list into a uint16 type where data has the shape {MSL,LSB}.
+ * 
+ * @param data
+ */
+uint16_t VL53L1X_mergeData(uint8_t *data);
+
+/**
+ * @brief divide a given value into a list of bytes going from MSB to LSB 
+ * 
+ * @param buff
+ * @param value
+ * @param len
+ */
+void VL53L1X_divergeData(uint8_t *buff, uint32_t value, uint8_t len);
+
 #endif
 
