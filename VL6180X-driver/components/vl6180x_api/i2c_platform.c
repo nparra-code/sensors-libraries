@@ -50,5 +50,8 @@ esp_err_t i2c_read(i2c_t i2c, uint8_t *data, size_t len)
 
 esp_err_t i2c_write(i2c_t i2c, uint8_t *data, size_t len)
 {
-    return i2c_master_transmit(i2c.dev_handle, data, len, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
+    esp_err_t status = i2c_master_transmit(i2c.dev_handle, data, len, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
+    if(status)
+        ESP_LOGE("VL6180x", "i2c_write status error %x", status);
+    return status;
 }

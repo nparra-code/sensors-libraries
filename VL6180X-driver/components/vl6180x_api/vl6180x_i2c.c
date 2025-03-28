@@ -162,12 +162,16 @@ int VL6180x_RdByte(VL6180xDev_t dev, uint16_t index, uint8_t *data){
     buffer[0]=index>>8;
     buffer[1]=index&0xFF;
 
+    ESP_LOGI("VL6180x", "VL6180x_RdByte index %x, buff0 %x, buff1 %x", index, buffer[0], buffer[1]);
+
     status=VL6180x_I2CWrite(dev, buffer, (uint8_t)2);
     if( !status ){
         status=VL6180x_I2CRead(dev, buffer,1);
         if( !status ){
             *data=buffer[0];
         }
+    } else {
+        ESP_LOGE("VL6180x", "VL6180x_RdByte I2CWrite fail. Ln 172 in vl6180x_i2c.c");
     }
     VL6180x_DoneI2CAcces(dev);
 

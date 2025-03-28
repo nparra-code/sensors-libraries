@@ -405,3 +405,6 @@ cmake-*
 build
 .DS_Store
 *.pdf
+
+# Independents
+*/build/
