@@ -8,14 +8,21 @@
 
 #include <vl6180x_api.h>
 
+#define I2C_SCL 15
+#define I2C_SDA 16
+
+i2c_t vl6180x_i2c;
+
 #define N_MEASURE_AVG   10
+
 int Sample_InitForOffsetCalib(VL6180xDev_t myDev){
     int status = 1, init_status = 1;
-    vTaskDelay(2000/portTICK_PERIOD_MS); // your code sleep at least 1 msec
+    vTaskDelay(20/portTICK_PERIOD_MS); // your code sleep at least 1 msec
     init_status = VL6180x_InitData(myDev);
-    ESP_LOGE("VL6180x", "int_status %d", init_status);
+    ESP_LOGI("VL6180x", "init_status %d", init_status);
     if(init_status == 0 || init_status == CALIBRATION_WARNING ){
         status = VL6180x_Prepare(myDev);
+        ESP_LOGI("VL6180x", "Prepare status %d", status);
         if( !status )
             status=init_status; // if prepare is successfull return potential init warning
     }
@@ -49,11 +56,13 @@ int Sample_OffsetRunCalibration(VL6180xDev_t myDev)
     /* Perform several ranging measurement */
     for( i=0; i<N_MEASURE_AVG; i++){
         status = VL6180x_RangePollMeasurement(myDev, &Range[i]);
+        ESP_LOGI("VL6180x", "Doing VL6180x_RangePollMeasurement");
+        vTaskDelay(50/portTICK_PERIOD_MS); // your code sleep at least 1 msec
         if( status ){
             ESP_LOGE("VL6180x", "VL6180x_RangePollMeasurement  fail");
         }
         if( Range[i].errorStatus != 0 ){
-            ESP_LOGE("VL6180x", "No target detect");
+            ESP_LOGE("VL6180x", "No target detect. ");
         }
     }
     
@@ -70,35 +79,37 @@ int Sample_OffsetRunCalibration(VL6180xDev_t myDev)
 }
 
 uint8_t Sample_OffsetCalibrate(void) {
-    i2c_t vl6180x_i2c;
-
-    i2c_init(&vl6180x_i2c, I2C_NUM_0, 15, 16, 100000, 0x29);
-
     VL6180xDev_t myDev = vl6180x_i2c;
     VL6180x_RangeData_t Range;
     int offset;
     int status;
     /* init device */
     status = Sample_InitForOffsetCalib(myDev);
-    if( status <0 ){
+    if( status < 0 ){
         ESP_LOGE("VL6180x", "Sample_InitForOffsetCalib  fail");
+        return 0;
+    } else {
+        ESP_LOGI("VL6180x", "Sample_InitForOffsetCalib  success");
     }
     /* run calibration */
     offset = Sample_OffsetRunCalibration(myDev);
+    ESP_LOGI("VL6180x", "offset %d", offset);
     /* when possible reset re-init device otherwise set back required filter */
     VL6180x_FilterSetState(myDev, 1);  // turn on wrap around filter again
     
-    /* program offset */
+    // /* program offset */
     VL6180x_SetOffsetCalibrationData(myDev, offset);
     
     /* Perform ranging measurement to check */
-    
-    VL6180x_RangePollMeasurement(myDev, &Range);
-    if (Range.errorStatus == 0 )
-        ESP_LOGI("VL6180x", "Range %ld mm", Range.range_mm);
-    else
-        ESP_LOGE("VL6180x", "Range error %lu", Range.errorStatus);
-    
+    do {
+        VL6180x_RangePollMeasurement(myDev, &Range);
+        if (Range.errorStatus == 0 )
+            // MyDev_ShowRange(myDev, Range.range_mm,0); // your code display range in mm
+            ESP_LOGI("VL6180x", "Range %ld", Range.range_mm);
+        else
+            // MyDev_ShowErr(myDev, Range.errorStatus); // your code display error code
+            ESP_LOGE("VL6180x", "Error %lu", Range.errorStatus);
+    } while (true); // your code to stop looping
     return offset;
 }
 
@@ -106,16 +117,22 @@ void app_main(void)
 {
     // i2c_t vl6180x_i2c;
 
-    // i2c_init(&vl6180x_i2c, I2C_NUM_1, 15, 16, 400000, 0x29);
+    // i2c_init(&vl6180x_i2c, I2C_NUM_1, I2C_SCL, I2C_SDA, 400000, 0x29);
 
-    // uint8_t buff[2] = {0x000, 0x000}, data[1];
+    // uint8_t buff[2] = {0x000, 0x000}, data[2];
     
     // //i2c_write(vl6180x_i2c, buff, 2);
     // // i2c_master_transmit((&vl6180x_i2c)->dev_handle, buff, 2, -1);
-
-    // if (i2c_master_transmit_receive(vl6180x_i2c.dev_handle, buff, 2, data, 1, I2C_TIMEOUT_MS / portTICK_PERIOD_MS) == ESP_OK) {
-    //     printf("Read: %x\n", data[0]);
+    // while (true){
+    //     if (i2c_master_transmit_receive(vl6180x_i2c.dev_handle, buff, 2, data, 2, I2C_TIMEOUT_MS / portTICK_PERIOD_MS) == ESP_OK) {
+    //         printf("Read: %x%x\n", data[0], data[1]);
+    //         //vTaskDelay(1000 / portTICK_PERIOD_MS);
+    //     }
     // }
-    Sample_OffsetCalibrate();
+    
+
+    i2c_init(&vl6180x_i2c, I2C_NUM_1, I2C_SCL, I2C_SDA, 400000, 0x29);
+    
+    Sample_OffsetCalibrate();    
 
 }
