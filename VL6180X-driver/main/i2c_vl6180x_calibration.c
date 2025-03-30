@@ -17,8 +17,8 @@ i2c_t vl6180x_i2c;
 
 int Sample_InitForOffsetCalib(VL6180xDev_t myDev){
     int status = 1, init_status = 1;
-    vTaskDelay(20/portTICK_PERIOD_MS); // your code sleep at least 1 msec
     init_status = VL6180x_InitData(myDev);
+    vTaskDelay(1/portTICK_PERIOD_MS); // your code sleep at least 1 msec
     ESP_LOGI("VL6180x", "init_status %d", init_status);
     if(init_status == 0 || init_status == CALIBRATION_WARNING ){
         status = VL6180x_Prepare(myDev);
@@ -57,13 +57,15 @@ int Sample_OffsetRunCalibration(VL6180xDev_t myDev)
     for( i=0; i<N_MEASURE_AVG; i++){
         status = VL6180x_RangePollMeasurement(myDev, &Range[i]);
         ESP_LOGI("VL6180x", "Doing VL6180x_RangePollMeasurement");
-        vTaskDelay(50/portTICK_PERIOD_MS); // your code sleep at least 1 msec
         if( status ){
             ESP_LOGE("VL6180x", "VL6180x_RangePollMeasurement  fail");
+            i--;
         }
         if( Range[i].errorStatus != 0 ){
             ESP_LOGE("VL6180x", "No target detect. ");
+            i--;
         }
+        vTaskDelay(1000/portTICK_PERIOD_MS); // your code sleep at least 1 msec
     }
     
     /* Calculate ranging average (sum) */
@@ -74,7 +76,7 @@ int Sample_OffsetRunCalibration(VL6180xDev_t myDev)
     
     /* Calculate part-to-part offset */
     offset = RealTargetDistance - (RangeSum/N_MEASURE_AVG);
-    ESP_LOGI("VL6180x", "offset %d", offset);
+    ESP_LOGI("VL6180x", "offset: %d", offset);
     return offset;
 }
 
@@ -93,7 +95,7 @@ uint8_t Sample_OffsetCalibrate(void) {
     }
     /* run calibration */
     offset = Sample_OffsetRunCalibration(myDev);
-    ESP_LOGI("VL6180x", "offset %d", offset);
+    ESP_LOGI("VL6180x", "offset adjusted: %d", offset);
     /* when possible reset re-init device otherwise set back required filter */
     VL6180x_FilterSetState(myDev, 1);  // turn on wrap around filter again
     
@@ -109,30 +111,15 @@ uint8_t Sample_OffsetCalibrate(void) {
         else
             // MyDev_ShowErr(myDev, Range.errorStatus); // your code display error code
             ESP_LOGE("VL6180x", "Error %lu", Range.errorStatus);
+        vTaskDelay(500/portTICK_PERIOD_MS);
     } while (true); // your code to stop looping
+
     return offset;
 }
 
 void app_main(void)
 {
-    // i2c_t vl6180x_i2c;
-
-    // i2c_init(&vl6180x_i2c, I2C_NUM_1, I2C_SCL, I2C_SDA, 400000, 0x29);
-
-    // uint8_t buff[2] = {0x000, 0x000}, data[2];
-    
-    // //i2c_write(vl6180x_i2c, buff, 2);
-    // // i2c_master_transmit((&vl6180x_i2c)->dev_handle, buff, 2, -1);
-    // while (true){
-    //     if (i2c_master_transmit_receive(vl6180x_i2c.dev_handle, buff, 2, data, 2, I2C_TIMEOUT_MS / portTICK_PERIOD_MS) == ESP_OK) {
-    //         printf("Read: %x%x\n", data[0], data[1]);
-    //         //vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //     }
-    // }
-    
-
     i2c_init(&vl6180x_i2c, I2C_NUM_1, I2C_SCL, I2C_SDA, 400000, 0x29);
     
-    Sample_OffsetCalibrate();    
-
+    Sample_OffsetCalibrate();
 }

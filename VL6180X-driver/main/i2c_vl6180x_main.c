@@ -25,7 +25,7 @@ void app_main(void)
     VL6180xDev_t myDev = vl6180x_i2c;
     VL6180x_RangeData_t Range;
 
-    vTaskDelay(10/portTICK_PERIOD_MS); // your code sleep at least 1 msec
+    vTaskDelay(10/portTICK_PERIOD_MS);
 
     int status = 1, init_status = VL6180x_InitData(myDev);
     ESP_LOGI("VL6180x", "init_status %d", init_status);

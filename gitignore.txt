@@ -407,4 +407,4 @@ build
 *.pdf
 
 # Independents
-*/build/
+**/build/
