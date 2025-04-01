@@ -20,7 +20,7 @@
 #include "platform_esp32s3.h" // Include the platform-specific header file for ESP32-S3
 
 #define UART_TX 17 // GPIO pin for UART TX
-#define UART_RX 16 // GPIO pin for UART RX
+#define UART_RX 18 // GPIO pin for UART RX
 
 uart_t myUART;
 
@@ -122,8 +122,6 @@ void SerialPort_DataReceive(void){
 
 void app_main(void)
 {
-   // Step 2: Initialization:
-	//EasyProfile_C_Interface_Init();
 
     if (uart_init_with_defaults(&myUART, 115200, 1024, UART_TX, UART_RX) == 0) {
         printf("UART initialized successfully\n");
@@ -133,42 +131,25 @@ void app_main(void)
     } else {
         printf("UART initialization failed\n");
     }
-	
-    // const uart_port_t uart_num = UART_NUM_2;
-    // uart_config_t uart_config = {
-    //     .baud_rate = 115200,
-    //     .data_bits = UART_DATA_8_BITS,
-    //     .parity = UART_PARITY_DISABLE,
-    //     .stop_bits = UART_STOP_BITS_1,
-    //     .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
-    //     .rx_flow_ctrl_thresh = 122,
-    // };
-    // // Configure UART parameters
-    // ESP_ERROR_CHECK(uart_param_config(uart_num, &uart_config));
 
-    // // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19)
-    // ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, 4, 5, 18, 19));
 
-    // // Setup UART buffered IO with event queue
-    // const int uart_buffer_size = (1024 * 2);
-    // QueueHandle_t uart_queue;
-    // // Install UART driver using an event queue here
-    // ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, uart_buffer_size, uart_buffer_size, 10, &uart_queue, 0));
+    // Step 2: Initialization:
+	EasyProfile_C_Interface_Init();
 
-	// while(1){
+	while(1){
 		
-	// 	// Step 3 and Step 4 are optional, only if you want to use the request-response communication pattern
-	// 	// Step 3: Request Roll Pitch Yaw Data from TransdcuerM 
-	//     uint16 toId = EP_ID_BROADCAST_;
-	// 	char*  txData;
-	// 	int    txSize;
-	// 	if(EP_SUCC_ == EasyProfile_C_Interface_TX_Request(toId, EP_CMD_RPY_, &txData, &txSize)){  // You can request a different data type by changing the EP_CMD_RPY_ to some other value defined in EasyObjectDictionary.h
-	// 		//SerialPort_SendData(txData, txSize);    // Step 4:  Send the request via Serial Port. Please modify this line according to your target platform.
-    //         uart_write(&myUART, (uint8_t*)txData, (size_t)txSize); // write the data to UART
+		// Step 3 and Step 4 are optional, only if you want to use the request-response communication pattern
+		// Step 3: Request Roll Pitch Yaw Data from TransdcuerM 
+	    uint16 toId = EP_ID_BROADCAST_;
+		char*  txData;
+		int    txSize;
+		if(EP_SUCC_ == EasyProfile_C_Interface_TX_Request(toId, EP_CMD_RPY_, &txData, &txSize)){  // You can request a different data type by changing the EP_CMD_RPY_ to some other value defined in EasyObjectDictionary.h
+			//SerialPort_SendData(txData, txSize);    // Step 4:  Send the request via Serial Port. Please modify this line according to your target platform.
+            uart_write(&myUART, (uint8_t*)txData, (size_t)txSize); // write the data to UART
 
-	// 	}
-	// 	SerialPort_DataReceive(); // Call the function to handle incoming data
-	// 	vTaskDelay(200/portTICK_PERIOD_MS);  // Please avoid sending requests too often.
+		}
+		SerialPort_DataReceive(); // Call the function to handle incoming data
+		vTaskDelay(200/portTICK_PERIOD_MS);  // Please avoid sending requests too often.
         
-	// }
+	}
 }
