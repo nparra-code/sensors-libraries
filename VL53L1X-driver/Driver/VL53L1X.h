@@ -1,11 +1,9 @@
 /**
  * \file        VL53L1X.h
  * \brief       VL53L1X driver library
- * \details
- * 
  * 
  * \author      Jose Rivera
- * \version     0.0.1
+ * \version     0.0.3
  * \date        20/10/2024
  * \copyright   Unlicensed
  */
