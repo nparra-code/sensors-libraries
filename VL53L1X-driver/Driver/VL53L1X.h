@@ -21,8 +21,8 @@
 #include "VL53L1X_types.h"
 #include "platform_i2c_esp32s3.h"
 
-#define I2C_MASTER_FREQ_HZ  400000    /*!< I2C master clock frequency */
-#define VL53L1X_SENSOR_ADDR  0x29        /*!< slave address for sensor */
+#define I2C_MASTER_FREQ_HZ  400000        /*!< I2C master clock frequency */
+#define VL53L1X_SENSOR_ADDR  0x29         /*!< slave address for sensor */
 
 static const char* TAG_VL53L1X = "VL53L1X";
 
@@ -199,8 +199,13 @@ bool VL53L1X_init(vl53l1x_t *vl53l1x, i2c_port_t i2c_num, uint8_t scl, uint8_t s
  */
 bool VL53L1X_deinit(vl53l1x_t* sensor);
 
-/**
- * @brief Deinitialize the VL53L1x driver
+/*!
+ * @brief Distance mode is a parameter provided to optimize the internal settings and tunings to get
+ * the best ranging performances
+ * Modes:
+ *    - short     Up to 1.3m  Better ambient immunity.
+ *    - Medium    Up to 3m.
+ *    - Long      Up to 4m    Maximun distance.
  * 
 * @param vl53l1x pointer to sensor structure
 * @param distance_mode Short(0) - Medium(1) - Long(2) - Unknown(3) 
@@ -269,6 +274,14 @@ void VL53L1X_encodeTimeout(uint32_t timeout_mclks, uint8_t* buff);
  * @param period_ms period in milliseconds determining how often the sensor takes a measurement.
  */
 void VL53L1X_startContinuous(vl53l1x_t* vl53l1x, uint32_t period_ms);
+
+/**
+ * @brief  Stop continuous measurements
+ * 
+ * @param vl53l1x
+ */
+void VL53L1X_stopContinuos(vl53l1x_t *vl53l1x);
+
 /**
  * @brief Returns a range reading in millimeters when continuous mode is active. If
  *  blocking is true (the default), this function waits for a new measurement to
