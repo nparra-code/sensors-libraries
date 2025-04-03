@@ -1,5 +1,12 @@
 #include "VL53L1X.h"
 
+void setAddress(vl53l1x_t *vl53l1x, uint8_t new_addr)
+{
+  new_addr = new_addr & 0x7F;
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,I2C_SLAVE__DEVICE_ADDRESS, &new_addr, 1);
+  vl53l1x->i2c_handle.addr = new_addr;
+}
+
 bool VL53L1X_init(vl53l1x_t *vl53l1x, i2c_port_t i2c_num, uint8_t scl, uint8_t sda, bool io_2v8)
 {
     //  I2C master configuration 
@@ -280,6 +287,27 @@ void VL53L1X_startContinuous(vl53l1x_t * vl53l1x, uint32_t period_ms){
     //uint8_t status;
     //i2c_read_reg16bits(&vl53l1x->i2c_handle,RESULT__RANGE_STATUS,&status,1);
     //ESP_LOGE(TAG_VL53L1X,"STATUS STconti: %d",status);
+
+}
+
+void VL53L1X_stopContinuos(vl53l1x_t *vl53l1x){
+  uint8_t buff[] = {0x80,0x00}; 
+  i2c_write_reg16bits(&vl53l1x->i2c_handle, SYSTEM__MODE_START,buff,1);  // mode_range__abort
+
+  calibrated = false;
+
+  // restore vhv configs
+  if (saved_vhv_init != 0)
+  {
+    i2c_write_reg16bits(&vl53l1x->i2c_handle,VHV_CONFIG__INIT,&saved_vhv_init,1);
+  }
+  if (saved_vhv_timeout != 0)
+  {
+    i2c_write_reg16bits(&vl53l1x->i2c_handle,VHV_CONFIG__TIMEOUT_MACROP_LOOP_BOUND,&saved_vhv_timeout,1);
+  }
+
+  // remove phasecal override
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,PHASECAL_CONFIG__OVERRIDE, &buff[1],1);
 
 }
 
