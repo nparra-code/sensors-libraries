@@ -346,20 +346,13 @@ uint16_t VL53L1X_readDistance(vl53l1x_t* vl53l1x, bool blocking)
 void VL53L1X_readResults(vl53l1x_t* vl53l1x){
     uint8_t read_buff[17];
     i2c_read_reg16bits(&vl53l1x->i2c_handle,RESULT__RANGE_STATUS,read_buff,17);
-    /*for (uint8_t i = 0; i < 17; i++)
-    {
-      ESP_LOGI(TAG_VL53L1X,"Data %d: %d",i,read_buff[i]);
-    }*/
     
-
     vl53l1x->results.range_status = read_buff[0];
     vl53l1x->results.stream_count = read_buff[2];
     vl53l1x->results.dss_actual_effective_spads_sd0 = VL53L1X_mergeData(&read_buff[3]);              // [4,5]
     vl53l1x->results.ambient_count_rate_mcps_sd0 = VL53L1X_mergeData(&read_buff[7]);                 // [8,9]
     vl53l1x->results.final_crosstalk_corrected_range_mm_sd0 = VL53L1X_mergeData(&read_buff[13]);     // [2,3]
     vl53l1x->results.peak_signal_count_rate_crosstalk_corrected_mcps_sd0 = VL53L1X_mergeData(&read_buff[15]); // [0, 1]
-    
-    //ESP_LOGI(TAG_VL53L1X,"Final_crosstalk_corrected_range_mm_sd0 : %d",vl53l1x->results.final_crosstalk_corrected_range_mm_sd0);
 }
 
 void VL53L1X_startTimeout(){
@@ -523,6 +516,66 @@ void VL53L1X_getRangingData(vl53l1x_t *vl53l1x){
 
 float VL53L1X_countRateFixedToFloat(uint16_t count_rate_fixed){
     return (float)count_rate_fixed / (1 << 7); 
+}
+
+bool VL53L1X_calibrateOffset(vl53l1x_t *vl53l1x, uint16_t targetDistanceInMm, uint16_t *foundOffset){
+  uint16_t averageDistance = 0;
+  uint8_t data[]={0x0,0x0},offset[2];
+  //Reset offset values 
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,ALGO__PART_TO_PART_RANGE_OFFSET_MM,data,2);
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,MM_CONFIG__INNER_OFFSET_MM,data,2);
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,MM_CONFIG__OUTER_OFFSET_MM,data,2);
+
+  VL53L1X_setDistanceMode(vl53l1x,Short);
+  VL53L1X_setMeasurementTimingBudget(vl53l1x,30000);
+  VL53L1X_startContinuous(vl53l1x,40);
+
+  for(uint8_t i=0; i<50; i++){
+    averageDistance += VL53L1X_readDistance(vl53l1x,1);
+  }
+  *foundOffset = (targetDistanceInMm - averageDistance/50);
+  VL53L1X_stopContinuos(vl53l1x);
+  VL53L1X_divergeData(offset,*foundOffset*4,2);
+
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,ALGO__PART_TO_PART_RANGE_OFFSET_MM,offset,2);
+  return 1;
+}
+
+bool VL53L1X_calibrateXTalk(vl53l1x_t *vl53l1x, uint16_t targetDistanceInMm, uint16_t *foundXtalk){
+  float AverageSignalRate = 0;
+	float AverageDistance = 0;
+	float AverageSpadNb = 0;
+  uint16_t distance = 0;
+  uint32_t calXtalk;
+  uint8_t data[2];
+
+  VL53L1X_setDistanceMode(vl53l1x,Short);
+  VL53L1X_setMeasurementTimingBudget(vl53l1x,30000);
+  VL53L1X_startContinuous(vl53l1x,40);
+
+  for(uint8_t i=0; i<50; i++){
+
+    distance = VL53L1X_readDistance(vl53l1x,1);
+    AverageDistance += distance;
+    AverageSpadNb += vl53l1x->results.peak_signal_count_rate_crosstalk_corrected_mcps_sd0;
+		AverageSignalRate += vl53l1x->ranging_data.peak_signal_count_rate_MCPS;
+  }
+  VL53L1X_stopContinuos(vl53l1x);
+  AverageDistance = AverageDistance / 50;
+	AverageSpadNb = AverageSpadNb / 50;
+	AverageSignalRate = AverageSignalRate / 50;
+
+  /* Calculate Xtalk value */
+  calXtalk = (uint16_t)(512*(AverageSignalRate*(1-(AverageDistance/targetDistanceInMm)))/AverageSpadNb);
+  if(calXtalk  > 0xffff)
+		calXtalk = 0xffff;
+  *foundXtalk = (uint16_t)((calXtalk*1000)>>9);
+  
+  /* Update Xtalk value*/
+  VL53L1X_divergeData(data,(uint16_t)calXtalk,2);
+  i2c_write_reg16bits(&vl53l1x->i2c_handle,ALGO__CROSSTALK_COMPENSATION_PLANE_OFFSET_KCPS,data,2);
+
+  return 1;
 }
 
 uint16_t VL53L1X_mergeData(uint8_t *data){
