@@ -1,6 +1,7 @@
 /**
  * \file        VL53L1X.h
  * \brief       VL53L1X driver library
+ * \details     VL53L1X is a long distance ranging Time-of-Flight sensor, ranging up to 4 m and fast ranging frequency up to 50 Hz.
  * 
  * \author      Jose Rivera
  * \version     0.0.3
@@ -20,6 +21,13 @@
 
 #include "VL53L1X_types.h"
 #include "platform_i2c_esp32s3.h"
+
+#include "driver/gpio.h"
+#include "esp_err.h"
+
+//#define GPIO_INPUT_IO  18   // GPIO pin for interrupt
+#define ESP_INTR_FLAG_DEFAULT 0
+
 
 #define I2C_MASTER_FREQ_HZ  400000        /*!< I2C master clock frequency */
 #define VL53L1X_SENSOR_ADDR  0x29         /*!< slave address for sensor */
@@ -177,6 +185,14 @@ static uint8_t saved_vhv_init;
 static uint8_t saved_vhv_timeout;
 
 /**
+ * @brief Set a new i2c address on the sensor
+ * 
+ * @param vl53l1x pointer to sensor structure
+ * @param new_addr
+ */
+void VL53L1X_setAddress(vl53l1x_t *vl53l1x, uint8_t new_addr);
+
+/**
  * @brief Initialize the VL53L1x driver
  * 
  * @param vl53l1x pointer to sensor structure
@@ -198,6 +214,9 @@ bool VL53L1X_init(vl53l1x_t *vl53l1x, i2c_port_t i2c_num, uint8_t scl, uint8_t s
 * @return false if the sensor deinitialization failed
  */
 bool VL53L1X_deinit(vl53l1x_t* sensor);
+
+void VL53L1X_initIrq(gpio_num_t gpio_irq);
+void gpio_isr_handler(void* arg);
 
 /*!
  * @brief Distance mode is a parameter provided to optimize the internal settings and tunings to get
@@ -348,6 +367,32 @@ bool VL53L1X_checkTimeoutExpired();
  * @param count_rate_fixed
  */
 float VL53L1X_countRateFixedToFloat(uint16_t count_rate_fixed);
+
+
+//? Calibration functions
+
+//bool VL53L1X_calibrateRefSPAD();
+
+/**
+ * @brief estimate the offset due to soldering the device on the customer board or adding a cover glass.
+ * 
+ * @param vl53l1x pointer to sensor structure
+ * @param targetDistanceInMm the distance where the sensor start to "under range", normaly 140mm
+ * @param foundOffset
+ */
+
+bool VL53L1X_calibrateOffset(vl53l1x_t *vl53l1x, uint16_t targetDistanceInMm, uint16_t *foundOffset);
+/**
+ * @brief estimate the amount of correction needed to compensate 
+ * the effect of a cover glass added on top of the module.
+ * due to the influence of the photons reflected back from the cover glass becoming strong. It's also called inflection point
+ * 
+ * @param vl53l1x pointer to sensor structure
+ * @param targetDistanceInMm the distance where the sensor start to "under range", normaly 140mm
+ * @param xtalk
+
+ */
+bool VL53L1X_calibrateXTalk(vl53l1x_t *vl53l1x, uint16_t targetDistanceInMm, uint16_t *foundXtalk);
 
 /**
  * @brief transform a uint8 list into a uint16 type where data has the shape {MSL,LSB}.
