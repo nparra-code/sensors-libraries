@@ -2,23 +2,27 @@
 
 void AS5600_Init(AS5600_t *as5600, i2c_port_t i2c_num, uint8_t scl, uint8_t sda, uint8_t out)
 {
+    as5600->out = out; // Set the GPIO pin connected to the OUT pin of the AS5600 sensor
+
     //  I2C master configuration 
     if (!i2c_init(&as5600->i2c_handle, i2c_num, scl, sda, I2C_MASTER_FREQ_HZ, AS5600_SENSOR_ADDR)) {
         printf("I2C initialization failed");
         return;
     }
 
-    // ADC pin OUT configuration 
-    if (!adc_init(&as5600->adc_handle, out)) {
-        printf("ADC initialization failed");
+    ///< GPIO configuration for the OUT pin. Read page 23 of the AS5600 datasheet to undertand the calibration process.
+    if (!gpio_init_basic(&as5600->gpio_handle, out, 2, false, false)) {
+        printf("GPIO initialization failed");
         return;
     }
+    gpio_set_low(&as5600->gpio_handle); // Set the GPIO to low (calibration process)
 }
 
 void AS5600_Deinit(AS5600_t *as5600)
 {
     i2c_deinit(&as5600->i2c_handle);
     adc_deinit(&as5600->adc_handle);
+    gpio_deinit(&as5600->gpio_handle);
 }
 
 float AS5600_ADC_GetAngle(AS5600_t *as5600)
@@ -147,6 +151,47 @@ bool AS5600_IsValidWriteReg(AS5600_t *as5600, AS5600_reg_t reg)
         return true;
     }
     return false;
+}
+
+// -------------------------------------------------------------
+// ------------------ GPIO and ADC FUNCTIONS -------------------
+void AS5600_InitADC(AS5600_t *as5600)
+{
+    // ADC pin OUT configuration 
+    if (!adc_init(&as5600->adc_handle, as5600->out)) {
+        printf("ADC initialization failed");
+        return;
+    }
+}
+
+void AS5600_DeinitADC(AS5600_t *as5600)
+{
+    adc_deinit(&as5600->adc_handle);
+}
+
+void AS5600_InitGPIO(AS5600_t *as5600)
+{
+    // GPIO pin OUT configuration 
+    if (!gpio_init_basic(&as5600->gpio_handle, as5600->out, 2, false, false)) {
+        printf("GPIO initialization failed");
+        return;
+    }
+    gpio_set_low(&as5600->gpio_handle); // Set the GPIO to low (calibration process)
+}
+
+void AS5600_DeinitGPIO(AS5600_t *as5600)
+{
+    gpio_deinit(&as5600->gpio_handle);
+}
+
+void AS5600_SetGPIO(AS5600_t *as5600, uint8_t value)
+{
+    if (value) {
+        gpio_set_high(&as5600->gpio_handle);
+    }
+    else {
+        gpio_set_low(&as5600->gpio_handle);
+    }
 }
 
 // -------------------------------------------------------------

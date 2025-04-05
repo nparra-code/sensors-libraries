@@ -149,3 +149,55 @@ void adc_read_mvolt(adc_t *adc, uint16_t *mvolt)
 }
 
 
+
+// -------------------------------------------------------------
+// ---------------------- GPIO ---------------------------------
+// -------------------------------------------------------------
+
+bool gpio_init_basic(gpio_t *gpio, uint8_t gpio_num, uint8_t mode, bool pulldown_en, bool pullup_en)
+{
+    esp_err_t ret = ESP_OK;
+
+    ///< Set GPIO configuration
+    gpio->gpio_num = gpio_num;
+    gpio->mode = mode;
+    gpio->pulldown_en = pulldown_en;
+    gpio->pullup_en = pullup_en;
+    gpio->intr_type = GPIO_INTR_DISABLE;
+
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = mode,
+        .pin_bit_mask = (1ULL << gpio_num),
+        .pull_down_en = pulldown_en,
+        .pull_up_en = pullup_en,
+    };
+    ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG_GPIO, "gpio config failed");
+    ESP_LOGI(TAG_GPIO, "GPIO %d configured", gpio_num);
+
+    return true;
+err:
+    return false;
+}
+
+bool gpio_deinit(gpio_t *gpio)
+{
+    esp_err_t ret = ESP_OK;
+    ret = gpio_reset_pin(gpio->gpio_num);
+    ESP_GOTO_ON_ERROR(ret, err, TAG_GPIO, "gpio reset pin failed");
+    ESP_LOGI(TAG_GPIO, "GPIO %d deinitialized", gpio->gpio_num);
+
+    return true;
+err:
+    return false;
+}
+
+void gpio_set_high(gpio_t *gpio)
+{
+    gpio_set_level(gpio->gpio_num, 1);
+}
+
+void gpio_set_low(gpio_t *gpio)
+{
+    gpio_set_level(gpio->gpio_num, 0);
+}
