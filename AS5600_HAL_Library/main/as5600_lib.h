@@ -12,7 +12,7 @@
  * That is why the OUT pin must be configured to output a 10%-90% signal.
  * 
  * \author      MaverickST
- * \version     0.0.3
+ * \version     0.0.4
  * \date        05/10/2024
  * \copyright   Unlicensed
  */
@@ -44,10 +44,12 @@ typedef struct
 {
     AS5600_config_t conf; ///< AS5600 configuration
     AS5600_reg_t reg;
+    uint8_t out;         ///< GPIO pin connected to the OUT pin of the AS5600 sensor
 
     // Peripheral handles
-    i2c_t i2c_handle;
-    adc_t adc_handle;
+    i2c_t i2c_handle;   ///< I2C handle for the AS5600 sensor
+    adc_t adc_handle;   ///< ADC handle for the OUT pin
+    gpio_t gpio_handle; ///< GPIO handle for the OUT pin
 
 } AS5600_t;
 
@@ -100,6 +102,45 @@ void AS5600_BurnSettingCommand(AS5600_t *as5600);
  * @return as5600_reg_t Register address
  */
 AS5600_reg_t AS5600_RegStrToAddr(AS5600_t *as5600, const char *reg_str);
+
+// --------------------------------------------------------------
+// ------------------ GPIO and ADC FUNCTIONS --------------------
+// --------------------------------------------------------------
+
+/**
+ * @brief Initialize the ADC driver
+ * 
+ * @param as5600 
+ */
+void AS5600_InitADC(AS5600_t *as5600);
+
+/**
+ * @brief Deinitialize the ADC driver
+ * 
+ * @param as5600 
+ */
+void AS5600_DeinitADC(AS5600_t *as5600);
+
+/**
+ * @brief Initialize the GPIO driver
+ * 
+ * @param as5600 
+ */
+void AS5600_InitGPIO(AS5600_t *as5600);
+
+/**
+ * @brief Deinitialize the GPIO driver
+ * 
+ * @param as5600 
+ */
+void AS5600_DeinitGPIO(AS5600_t *as5600);
+
+/**
+ * @brief Set the GPIO pin to the specified value
+ * 
+ * @param value Value to set (0 or 1)
+ */
+void AS5600_SetGPIO(AS5600_t *as5600, uint8_t value);
 
 // -------------------------------------------------------------
 // ---------------------- I2C FUNCTIONS ------------------------

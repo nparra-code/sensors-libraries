@@ -173,4 +173,58 @@ void adc_read_raw(adc_t *adc, int *raw);
 void adc_read_mvolt(adc_t *adc, uint16_t *mvolt);
 
 
+// -------------------------------------------------------------
+// ---------------------- GPIO ---------------------------------
+// -------------------------------------------------------------
+
+#include "driver/gpio.h"
+#include "esp_err.h"
+
+static const char* TAG_GPIO = "gpio";
+
+typedef struct
+{
+    uint8_t gpio_num;
+    gpio_int_type_t intr_type;
+    gpio_mode_t mode;
+    gpio_pull_mode_t pullup_en;
+    gpio_pull_mode_t pulldown_en;
+} gpio_t;
+
+/**
+ * @brief Initialize the GPIO driver
+ * 
+ * @param gpio struct to store the GPIO configuration
+ * @param gpio_num GPIO pin number
+ * @param mode 1 = INPUT, 2 = OUTPUT, 
+ * @param pulldown_en 0 = disable, 1 = enable
+ * @param pullup_en 0 = disable, 1 = enable
+ * @return true if the GPIO is initialized correctly
+ * @return false if the GPIO initialization failed
+ */
+bool gpio_init_basic(gpio_t *gpio, uint8_t gpio_num, uint8_t mode, bool pulldown_en, bool pullup_en);
+
+/**
+ * @brief Deinitialize the GPIO driver
+ * 
+ * @param gpio struct to store the GPIO configuration
+ * @return true if the GPIO is deinitialized correctly
+ * @return false if the GPIO deinitialization failed
+ */
+bool gpio_deinit(gpio_t *gpio);
+
+/**
+ * @brief Set the GPIO pin to HIGH
+ * 
+ * @param gpio struct to store the GPIO configuration
+ */
+void gpio_set_high(gpio_t *gpio);
+
+/**
+ * @brief Set the GPIO pin to LOW
+ * 
+ * @param gpio struct to store the GPIO configuration
+ */
+void gpio_set_low(gpio_t *gpio);
+
 #endif // __HAL_ESP32__
