@@ -1,7 +1,7 @@
 /**
  * \file        platform_esp32s3.h
- * \brief
- * \details     I2C and ADC HAL for ESP32-S3
+ * \brief       HAL for ESP32-S3
+ * \details     I2C, ADC and GPIO HAL for ESP32-S3
  * 
  * \author      MaverickST
  * \version     0.0.3

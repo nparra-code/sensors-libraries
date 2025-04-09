@@ -1,3 +1,15 @@
+/**
+ * @file main.c
+ * @author MaverickST
+ * @brief Main file for the AS5600 library
+ * @details This file contains the main function and the calibration process for the AS5600 sensor.
+ * @version 0.1
+ * @date 2025-04-08
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
+
 #include <stdio.h>
 
 #include "as5600_lib.h"
