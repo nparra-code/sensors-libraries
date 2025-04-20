@@ -10,12 +10,6 @@ void AS5600_Init(AS5600_t *as5600, i2c_port_t i2c_num, uint8_t scl, uint8_t sda,
         return;
     }
 
-    ///< GPIO configuration for the OUT pin. Read page 23 of the AS5600 datasheet to undertand the calibration process.
-    if (!gpio_init_basic(&as5600->gpio_handle, out, 2, false, false)) {
-        printf("GPIO initialization failed");
-        return;
-    }
-    gpio_set_low(&as5600->gpio_handle); // Set the GPIO to low (calibration process)
 }
 
 void AS5600_Deinit(AS5600_t *as5600)
