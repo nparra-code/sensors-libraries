@@ -26,6 +26,7 @@ AS5600_t gAs5600;
 #include "esp_timer.h"
 esp_timer_handle_t gOneshotTimer;
 uint8_t cnt_cali; ///< Counter for the calibration process
+uint16_t raw_angle; ///< Raw angle readed from the AS5600 sensor
 
 /**
  * @brief Callback for the AS5600 sensor calibration
@@ -61,6 +62,14 @@ void app_main(void)
 
 
     ///< ------------- For calibration process. -------------
+
+    // Read the raw angle from the AS5600 sensor to set the start position
+    raw_angle = 0;
+    AS5600_GetRawAngle(&gAs5600, &raw_angle);
+    printf("Raw angle readed (start position): 0x%04X\n", raw_angle);
+    AS5600_SetStartPosition(&gAs5600, raw_angle); ///< Set the start position to the raw angle readed from the AS5600 sensor
+    printf("Start position setted. Wait at least 1ms. \n");
+
     // Create a one-shot timer to control the sequence
     const esp_timer_create_args_t oneshot_timer_args = {
         .callback = &sensor_calibration_cb,
@@ -72,7 +81,7 @@ void app_main(void)
     gOneshotTimer = oneshot_timer;
     cnt_cali = 0; ///< Initialize the counter for the calibration process
 
-    ESP_ERROR_CHECK(esp_timer_start_once(gOneshotTimer, 500*1000)); ///< Start the timer to calibrate the AS5600 sensor
+    ESP_ERROR_CHECK(esp_timer_start_once(gOneshotTimer, 500*1000)); ///< Start the timer to calibrate the AS5600 sensor (500ms)
     ESP_LOGI("app_main", "AS5600 calibration timer started");
     ///< -------------
 
@@ -86,24 +95,28 @@ void sensor_calibration_cb(void *arg)
 {
     switch (cnt_cali) {
         case 0:
-            printf("AS5600 calibration step 1. As step 4 in page 23 of the datasheet, move the magnet (or wheel) to the MAX position.\n");
+            printf("AS5600 calibration step 1. \nAs step 4 in page 22 of the datasheet, move the magnet (or wheel) to the MAX position (5 seconds to move it).\n");
 
-            AS5600_DeinitGPIO(&gAs5600); ///< Deinitialize the GPIO driver
             cnt_cali++;
-            esp_timer_start_once(gOneshotTimer, 5*1000*1000); ///< Start the timer to calibrate the AS5600 sensor
+            esp_timer_start_once(gOneshotTimer, 5*1000*1000); ///< Start the timer to calibrate the AS5600 sensor (5s)
             break;
         case 1:
-            printf("AS5600 calibration step 2\n");
+            printf("AS5600 calibration step 2. Setting the max position....\n");
 
-            AS5600_InitGPIO(&gAs5600); ///< Initialize the GPIO driver
-            AS5600_SetGPIO(&gAs5600, 0); ///< Set the GPIO pin to low (GND)
+            raw_angle = 0;
+            AS5600_GetRawAngle(&gAs5600, &raw_angle); ///< Get the raw angle from the AS5600 sensor
+            printf("Raw angle readed (max position): 0x%04X\n", raw_angle);
+            AS5600_SetStopPosition(&gAs5600, raw_angle); ///< Set the stop position to the raw angle readed from the AS5600 sensor
+            printf("Max position setted. Wait at least 1ms. \n");
+
             cnt_cali++;
-            esp_timer_start_once(gOneshotTimer, 500*1000); ///< Start the timer to calibrate the AS5600 sensor
+            esp_timer_start_once(gOneshotTimer, 500*1000); ///< Start the timer to calibrate the AS5600 sensor (500ms)
             break;
         case 2:
-            printf("AS5600 calibration step 3\n");
+            printf("AS5600 calibration step 3. \nUse burn commands to permanently write the start and stop positions....\n");
 
-            AS5600_DeinitGPIO(&gAs5600); ///< Deinitialize the GPIO driver
+            ///< BURN COMMANDS HERE (warning: this will burn the configuration to the EEPROM of the AS5600 sensor, wait at least 1ms before using the I2C AS5600 again)
+
             AS5600_InitADC(&gAs5600); ///< Initialize the ADC driver
 
             /**
@@ -114,7 +127,7 @@ void sensor_calibration_cb(void *arg)
             printf("angle-> %0.2f\n", angle);
 
             // Read n times the angle.
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1000; i++) {
                 vTaskDelay(1000 / portTICK_PERIOD_MS); ///< Wait 1s
                 angle = AS5600_ADC_GetAngle(&gAs5600); ///< Get the angle from the ADC
                 printf("angle-> %0.2f\n", angle);
