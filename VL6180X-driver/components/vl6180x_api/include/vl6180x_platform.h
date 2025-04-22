@@ -146,7 +146,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define VL6180X_LOG_ENABLE  0
 
 #include "vl6180x_def.h"
-#include "i2c_platform.h"
+#include "platform_esp32s3.h"
 
 //TODO: modify this
 #if VL6180x_SINGLE_DEVICE_DRIVER
