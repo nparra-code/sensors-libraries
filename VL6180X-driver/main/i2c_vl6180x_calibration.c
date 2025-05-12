@@ -6,7 +6,7 @@
 #include "freertos/task.h"
 #include "driver/i2c_master.h"
 
-#include <vl6180x_api.h>
+#include "vl6180x_api.h"
 
 #define I2C_SCL 15
 #define I2C_SDA 16
