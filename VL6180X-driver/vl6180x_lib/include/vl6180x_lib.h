@@ -13,12 +13,12 @@
 #define __VL6180X_LIB_H__
 
 
-#include "sdkconfig.h"
-#include "freertos/task.h"
+#include "platform_esp32s3.h"
 
 #include "vl6180x_api.h"
 
-#include "platform_esp32s3.h"
+#include "sdkconfig.h"
+#include "freertos/task.h"
 
 #define VL6180X_I2C_ADDR 0x29
 #define I2C_FREQUENCY 400000 ///< I2C frequency in Hz

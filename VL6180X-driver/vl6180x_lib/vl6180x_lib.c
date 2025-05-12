@@ -2,12 +2,12 @@
 
 void VL6180x_Init(VL6180x_t *vl6180x_i2c, i2c_port_t port, uint8_t scl, uint8_t sda){
 
-    if(!i2c_init(&vl6180x_i2c->i2c_handle, port, scl, sda, I2C_FREQUENCY, &vl6180x_i2c->addr);){
+    if(!i2c_init(&vl6180x_i2c->i2c_handle, port, scl, sda, I2C_FREQUENCY, vl6180x_i2c->addr)){
         ESP_LOGE("VL6180x", "I2C init failed");
         return;
     }
 
-    VL6180xDev_t myDev = &vl6180x_i2c->i2c_handle;
+    VL6180xDev_t myDev = vl6180x_i2c->i2c_handle;
 
     vTaskDelay(10/portTICK_PERIOD_MS);
 
@@ -29,7 +29,7 @@ void VL6180x_Deinit(VL6180x_t *vl6180x_i2c)
 
 int32_t VL6180x_GetRange(VL6180x_t *vl6180x_i2c){
 
-    VL6180xDev_t myDev = &vl6180x_i2c->i2c_handle;
+    VL6180xDev_t myDev = vl6180x_i2c->i2c_handle;
     VL6180x_RangeData_t Range;
 
     VL6180x_RangePollMeasurement(myDev, &Range);

@@ -86,7 +86,7 @@ typedef struct MyVL6180Dev_t *VL6180xDev_t;
  * @ingroup cci_i2c
  */
 int  VL6180x_I2CWrite(VL6180xDev_t dev, uint8_t  *buff, uint8_t len){
-    return i2c_write(dev, buff, len);
+    return i2c_write(&dev, buff, len);
 }
 
 /**
@@ -99,7 +99,7 @@ int  VL6180x_I2CWrite(VL6180xDev_t dev, uint8_t  *buff, uint8_t len){
  * @ingroup  cci_i2c
  */
 int VL6180x_I2CRead(VL6180xDev_t dev, uint8_t *buff, uint8_t len){
-    return i2c_read(dev, buff, len);
+    return i2c_read(&dev, buff, len);
 }
 
 
