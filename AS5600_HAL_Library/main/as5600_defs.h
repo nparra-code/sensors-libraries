@@ -44,7 +44,6 @@ typedef enum
     AS5600_POWER_MODE_LPM1 = 0x01,   /*!< Low power mode 1 */
     AS5600_POWER_MODE_LPM2 = 0x02,   /*!< Low power mode 2 */
     AS5600_POWER_MODE_LPM3 = 0x03,   /*!< Low power mode 3 */
-    AS5600_POWER_MODE_COUNT = 0x04   /*!< Number of power modes */
 } AS5600_power_mode_t;
 
 /**
@@ -56,7 +55,6 @@ typedef enum
     AS5600_HYSTERESIS_1LSB = 0x01,  /*!< Hysteresis 1LSB */
     AS5600_HYSTERESIS_2LSB = 0x02,  /*!< Hysteresis 2LSB */
     AS5600_HYSTERESIS_3LSB = 0x03,  /*!< Hysteresis 3LSB */
-    AS5600_HYSTERESIS_COUNT = 0x04  /*!< Number of hysteresis modes */
 } AS5600_hysteresis_t;
 
 /**
@@ -67,7 +65,6 @@ typedef enum
     AS5600_OUTPUT_STAGE_ANALOG_FR = 0x00, ///< Analog output 0%-100%, FULL RANGE
     AS5600_OUTPUT_STAGE_ANALOG_RR = 0x01, ///< Analog output 10%-90%, REDUCED RANGE
     AS5600_OUTPUT_STAGE_DIGITAL_PWM = 0x02, ///< PWM output
-    AS5600_OUTPUT_STAGE_COUNT = 0x03 ///< Number of output stages
 } AS5600_output_stage_t;
 
 /**
@@ -79,7 +76,6 @@ typedef enum
     AS5600_PWM_FREQUENCY_230HZ = 0x01, ///< 230Hz
     AS5600_PWM_FREQUENCY_460HZ = 0x02, ///< 460Hz
     AS5600_PWM_FREQUENCY_920HZ = 0x03, ///< 920Hz
-    AS5600_PWM_FREQUENCY_COUNT = 0x04  ///< Number of PWM frequencies
 } AS5600_pwm_frequency_t;
 
 /**
@@ -91,7 +87,6 @@ typedef enum
     AS5600_SLOW_FILTER_8X = 0x01,   ///< 8x
     AS5600_SLOW_FILTER_4X = 0x02,   ///< 4x
     AS5600_SLOW_FILTER_2X = 0x03,   ///< 2x
-    AS5600_SLOW_FILTER_COUNT = 0x04 ///< Number of slow filter steps
 } AS5600_slow_filter_t;
 
 /**
@@ -113,7 +108,6 @@ typedef enum
     AS5600_FF_THRESHOLD_21LSB = 0x05, ///< 21LSB
     AS5600_FF_THRESHOLD_24LSB = 0x06, ///< 24LSB
     AS5600_FF_THRESHOLD_10LSB = 0x07, ///< 10LSB
-    AS5600_FF_THRESHOLD_COUNT = 0x08 ///< Number of fast filter thresholds
 } AS5600_ff_threshold_t;
 
 /**
@@ -123,7 +117,6 @@ typedef enum
 {
     AS5600_BURN_MODE_BURN_SETTING = 0x40U, ///< Command for burning a setting configuration
     AS5600_BURN_MODE_BURN_ANGLE = 0x80U, ///< Command for burning start and end angles
-    AS5600_BURN_MODE_COUNT, ///< Number of burn modes
 } AS5600_burn_mode_t;
 
 /**
@@ -133,7 +126,6 @@ typedef enum
 {
     AS5600_WATCHDOG_OFF = 0x00, ///< Watchdog off
     AS5600_WATCHDOG_ON = 0x01, ///< Watchdog on
-    AS5600_WATCHDOG_COUNT = 0x02 ///< Number of watchdog options
 } AS5600_watchdog_t;
 
 /**
